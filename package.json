@@ -1,8 +1,8 @@
 {
-  "name": "chat-app",
+  "name": "netlify-chat-app",
   "version": "1.0.0",
-  "scripts": {
-    "start": "netlify dev"
+  "type": "module",
+  "dependencies": {
+    "node-fetch": "^3.3.2"
   }
 }
-
