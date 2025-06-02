@@ -41,11 +41,14 @@
     const usernameDisplay = document.getElementById("username-display");
     const loginError = document.getElementById("login-error");
     const messagesDiv = document.getElementById("messages");
+    let refreshIntervalId = null;
 
     // Check for existing login
     const currentUser = localStorage.getItem("username");
     if (currentUser) {
       showChat(currentUser);
+      // Refresh messages every 5 seconds
+      refreshIntervalId = setInterval(loadMessages, 5000);
     }
 
     async function login() {
@@ -63,6 +66,7 @@
       if (res.ok && result.success) {
         localStorage.setItem("username", username);
         showChat(username);
+        refreshIntervalId = setInterval(loadMessages, 5000);
       } else {
         loginError.textContent = result.error || "Login failed";
       }
@@ -70,8 +74,16 @@
 
     function logout() {
       localStorage.removeItem("username");
+      if (refreshIntervalId) {
+        clearInterval(refreshIntervalId);
+        refreshIntervalId = null;
+      }
       loginSection.style.display = "block";
       chatSection.style.display = "none";
+      messagesDiv.innerHTML = "";
+      loginError.textContent = "";
+      document.getElementById("login-username").value = "";
+      document.getElementById("login-password").value = "";
     }
 
     function showChat(username) {
