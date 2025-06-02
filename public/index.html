@@ -1,1 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Netlify Airtable Chat</title>
+</head>
+<body>
+  <h1>Chat App</h1>
+  <form id="chat-form">
+    <input type="text" id="name" placeholder="Your name" required />
+    <br /><br />
+    <textarea id="message" placeholder="Your message" required></textarea>
+    <br /><br />
+    <label for="category">Category:</label>
+    <select id="category" required>
+      <option value="Idea">Idea</option>
+      <option value="Problem">Problem</option>
+      <option value="Misc">Misc</option>
+    </select>
+    <br /><br />
+    <button type="submit">Send Message</button>
+  </form>
+
+  <div id="messages"></div>
+
+  <script>
+    // Simple JavaScript to handle form submission and display messages
+    const form = document.getElementById('chat-form');
+    const messagesDiv = document.getElementById('messages');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const category = document.getElementById('category').value;
+
+      if (!name || !message) {
+        alert('Please enter your name and message.');
+        return;
+      }
+
+      const response = await fetch('/.netlify/functions/send-message', {
+        method: 'POST',
+        body: JSON.stringify({ name, message, category }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (response.ok) {
+        alert('Message sent!');
+        form.reset();
+        loadMessages();
+      } else {
+        alert('Error sending message');
+      }
+    });
+
+    async function loadMessages() {
+      const res = await fetch('/.netlify/functions/get-messages');
+      if (!res.ok) return;
+
+      const data = await res.json();
+      messagesDiv.innerHTML = '';
+
+      data.records.forEach(record => {
+        const { Name, Message, Category } = record.fields;
+        const msgElem = document.createElement('div');
+        msgElem.textContent = `[${Category}] ${Name}: ${Message}`;
+        messagesDiv.appendChild(msgElem);
+      });
+    }
+
+    // Load messages on page load
+    loadMessages();
+  </script>
+</body>
+</html>
 
