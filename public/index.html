@@ -7,73 +7,118 @@
 </head>
 <body>
   <h1>Chat App</h1>
-  <form id="chat-form">
-    <input type="text" id="name" placeholder="Your name" required />
-    <br /><br />
-    <textarea id="message" placeholder="Your message" required></textarea>
-    <br /><br />
-    <label for="category">Category:</label>
-    <select id="category" required>
-      <option value="Idea">Idea</option>
-      <option value="Problem">Problem</option>
-      <option value="Misc">Misc</option>
-    </select>
-    <br /><br />
-    <button type="submit">Send Message</button>
-  </form>
 
+  <!-- Login Form -->
+  <div id="login-section">
+    <h3>Login</h3>
+    <input type="text" id="login-username" placeholder="Username" />
+    <input type="password" id="login-password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <p id="login-error" style="color:red;"></p>
+  </div>
+
+  <!-- Chat Form (hidden until logged in) -->
+  <div id="chat-section" style="display:none;">
+    <p>Welcome, <span id="username-display"></span>! <button onclick="logout()">Logout</button></p>
+    <form id="chat-form">
+      <textarea id="message" placeholder="Your message" required></textarea><br /><br />
+      <label for="category">Category:</label>
+      <select id="category" required>
+        <option value="Idea">Idea</option>
+        <option value="Problem">Problem</option>
+        <option value="Misc">Misc</option>
+      </select><br /><br />
+      <button type="submit">Send Message</button>
+    </form>
+  </div>
+
+  <hr />
   <div id="messages"></div>
 
   <script>
-    // Simple JavaScript to handle form submission and display messages
-    const form = document.getElementById('chat-form');
-    const messagesDiv = document.getElementById('messages');
+    const loginSection = document.getElementById("login-section");
+    const chatSection = document.getElementById("chat-section");
+    const usernameDisplay = document.getElementById("username-display");
+    const loginError = document.getElementById("login-error");
+    const messagesDiv = document.getElementById("messages");
 
-    form.addEventListener('submit', async (e) => {
+    // Check for existing login
+    const currentUser = localStorage.getItem("username");
+    if (currentUser) {
+      showChat(currentUser);
+    }
+
+    async function login() {
+      const username = document.getElementById("login-username").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+
+      const res = await fetch("/.netlify/functions/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const result = await res.json();
+
+      if (res.ok && result.success) {
+        localStorage.setItem("username", username);
+        showChat(username);
+      } else {
+        loginError.textContent = result.error || "Login failed";
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("username");
+      loginSection.style.display = "block";
+      chatSection.style.display = "none";
+    }
+
+    function showChat(username) {
+      loginSection.style.display = "none";
+      chatSection.style.display = "block";
+      usernameDisplay.textContent = username;
+      loadMessages();
+    }
+
+    const form = document.getElementById("chat-form");
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const name = document.getElementById('name').value.trim();
-      const message = document.getElementById('message').value.trim();
-      const category = document.getElementById('category').value;
+      const message = document.getElementById("message").value.trim();
+      const category = document.getElementById("category").value;
+      const name = localStorage.getItem("username");
 
-      if (!name || !message) {
-        alert('Please enter your name and message.');
-        return;
-      }
+      if (!name || !message) return;
 
-      const response = await fetch('/.netlify/functions/send-message', {
-        method: 'POST',
+      const response = await fetch("/.netlify/functions/send-message", {
+        method: "POST",
         body: JSON.stringify({ name, message, category }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
 
       if (response.ok) {
-        alert('Message sent!');
         form.reset();
         loadMessages();
       } else {
-        alert('Error sending message');
+        alert("Error sending message");
       }
     });
 
     async function loadMessages() {
-      const res = await fetch('/.netlify/functions/get-messages');
+      const res = await fetch("/.netlify/functions/get-messages");
       if (!res.ok) return;
 
       const data = await res.json();
-      messagesDiv.innerHTML = '';
+      messagesDiv.innerHTML = "";
 
-      data.records.forEach(record => {
+      data.records.forEach((record) => {
         const { Name, Message, Category } = record.fields;
-        const msgElem = document.createElement('div');
-        msgElem.textContent = `[${Category}] ${Name}: ${Message}`;
-        messagesDiv.appendChild(msgElem);
+        const div = document.createElement("div");
+        div.textContent = `[${Category}] ${Name}: ${Message}`;
+        messagesDiv.appendChild(div);
       });
     }
-
-    // Load messages on page load
-    loadMessages();
   </script>
 </body>
 </html>
-
