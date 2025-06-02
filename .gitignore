@@ -1,0 +1,11 @@
+# Ignore environment files
+.env
+
+# Node modules (in case you use them later)
+node_modules/
+
+# Netlify build output (if any)
+.netlify/
+
+# Log files
+*.log
